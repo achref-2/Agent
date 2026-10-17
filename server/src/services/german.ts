@@ -70,13 +70,13 @@ export async function recordMistakes(user: UserDoc, corrections: z.infer<typeof 
 const CheckSchema = z.object({
   corrected: z.string(),
   corrections: z.array(CorrectionSchema),
-  naturalVersion: z.string().describe("How a native speaker would naturally write it"),
+  naturalVersion: z.string().describe("The same text rewritten in German as a native speaker would naturally write it (always German, never a translation)"),
   overall: z.string().describe("One or two sentences of feedback in the explanation language"),
 });
 
 export async function checkText(user: UserDoc, text: string) {
   const out = await getProvider().generateObject({
-    system: `You are a precise German teacher. The learner is CEFR ${user.german?.level ?? "B1"}. Explain in ${explanationLanguage(user)}. Correct only genuine mistakes.`,
+    system: `You are a precise German teacher. The learner is CEFR ${user.german?.level ?? "B1"}. Explain in ${explanationLanguage(user)}, but keep the corrected and natural versions in German. Correct only genuine mistakes. Be careful with facts about German: state a noun's gender or a case rule only when you are sure (e.g. der Supermarkt is masculine); if unsure, explain the correction without naming the rule.`,
     schema: CheckSchema,
     prompt: `Check this German text:\n\n${text}`,
   });
