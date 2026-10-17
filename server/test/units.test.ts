@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addDays, todayInTz, zonedToUtc } from "../src/lib/dates.js";
 import { parseQuickAdd } from "../src/services/quickadd.js";
+import { fixReplyPlaceholders } from "../src/services/admin.js";
 import { chunkPages, tokenize } from "../src/services/retrieval.js";
 import { quoteFound } from "../src/services/ai-common.js";
 
@@ -57,5 +58,17 @@ describe("retrieval helpers", () => {
   it("verifies quotes whitespace-insensitively", () => {
     expect(quoteFound("Nyquist  rate is twice", "The Nyquist rate is twice the bandwidth")).toBe(true);
     expect(quoteFound("made up sentence here", "The Nyquist rate is twice the bandwidth")).toBe(false);
+  });
+});
+
+describe("reply draft placeholders", () => {
+  it("replaces placeholder greetings and signatures", () => {
+    const out = fixReplyPlaceholders("Sehr geehrte [Name des Absenders],\n\nich werde die Bescheinigung hochladen.\n\nMit freundlichen Grüßen\n[Name des Absenders]", "Ghost");
+    expect(out).toBe("Sehr geehrte Damen und Herren,\n\nich werde die Bescheinigung hochladen.\n\nMit freundlichen Grüßen\nGhost");
+  });
+  it("keeps real greetings and other placeholders", () => {
+    const text = "Sehr geehrte Frau Schmidt,\n\nmeine Versichertennummer ist [Versichertennummer].";
+    expect(fixReplyPlaceholders(text, "Ghost")).toBe(text);
+    expect(fixReplyPlaceholders(null, "Ghost")).toBeNull();
   });
 });
