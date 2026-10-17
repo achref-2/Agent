@@ -23,6 +23,17 @@ const AdminAnalysisSchema = z.object({
   draftReplyEnglish: z.string().nullable().describe("English translation of the reply"),
 });
 
+/**
+ * Small local models often leave the greeting or signature as a placeholder ("Sehr geehrte [Name des Absenders]").
+ * Replace those with the standard formal greeting for an organisation and the user's own name.
+ */
+export function fixReplyPlaceholders(reply: string | null, userName: string): string | null {
+  if (!reply) return reply;
+  return reply
+    .replace(/^(\s*)Sehr geehrte[rs]?\s*(?:Damen und Herren\s*)?\[[^\]\n]*\]\s*,?/i, "$1Sehr geehrte Damen und Herren,")
+    .replace(/\[(?:Ihr(?:e)? Name|Name des Absenders|Absender(?:name)?|Dein Name|Vorname Nachname|Name)\]/gi, userName);
+}
+
 export async function analyzeAdminDocument(user: UserDoc, documentId: string) {
   const { doc, chunks } = await getDocumentPages(user, documentId);
   if (!chunks.length) throw badRequest(doc.statusMessage || "This document has no extractable text.");
@@ -32,14 +43,15 @@ export async function analyzeAdminDocument(user: UserDoc, documentId: string) {
   if (fullText.length > 200_000) throw badRequest("This document is too long to analyse in one go (over ~50 pages).");
 
   const analysis = await getProvider().generateObject({
-    system: `You explain German official letters, emails, insurance, rental and university documents to an international student in Köln (today is ${todayInTz(user.timezone)}). Separate what the document actually says (facts, with exact quotes) from your interpretations. Never present legal conclusions as certain; list them as uncertainties. Never invent dates, amounts or reference numbers. ${UNTRUSTED_RULE}`,
+    system: `You explain German official letters, emails, insurance, rental and university documents to an international student in Köln (today is ${todayInTz(user.timezone)}). Separate what the document actually says (facts, with exact quotes) from your interpretations. Never present legal conclusions as certain; list them as uncertainties. Never invent dates, amounts or reference numbers. If a reply is needed, write it from the student to the sending organisation: start with "Sehr geehrte Damen und Herren," (or the named contact person), sign with the student's name, and describe only future actions, never claim something is already done. ${UNTRUSTED_RULE}`,
     schema: AdminAnalysisSchema,
     prompt: `Analyse this document titled "${doc.title}". The student who received it is ${user.name}; any reply is written by ${user.name} (sign with this name, not a placeholder) and addressed to the organisation or person who sent the document. Only use placeholders like [Versichertennummer] for details that are not in the document.\n\n${wrapUntrusted(fullText)}`,
   });
   // Mark which quotes really occur in the document, so the UI can flag unverifiable ones.
   const facts = analysis.facts.map((f) => ({ ...f, verified: quoteFound(f.quote, fullText) }));
   const deadlines = analysis.deadlines.map((d) => ({ ...d, verified: quoteFound(d.quote, fullText) }));
-  const stored = { ...analysis, facts, deadlines, generatedAt: new Date().toISOString(), model: getProvider().model };
+  const draftReplyGerman = fixReplyPlaceholders(analysis.draftReplyGerman, user.name);
+  const stored = { ...analysis, draftReplyGerman, facts, deadlines, generatedAt: new Date().toISOString(), model: getProvider().model };
   doc.analysis = stored;
   await doc.save();
   return stored;
