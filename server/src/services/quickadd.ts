@@ -20,7 +20,8 @@ export function parseQuickAdd(text: string, tz: string, now = new Date()): TaskC
   if (prio) {
     const p = prio[2].toLowerCase().replace("!", "");
     priority = p === "low" ? "low" : p === "high" || p === "important" ? "high" : "urgent";
-    if (prio[2].startsWith("!")) title = title.replace(prio[0], " ");
+    // "!high" markers are always removed; a bare keyword only when it trails the text ("... asap").
+    if (prio[2].startsWith("!") || title.slice(prio.index + prio[0].length).trim() === "") title = title.replace(prio[0], " ");
   }
   const wantsReminder = /^remind me( to)?\b/i.test(title);
   title = title.replace(/^(remind me( to)?|todo:?|task:?)\s*/i, "");

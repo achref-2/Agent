@@ -26,6 +26,13 @@ describe("quick add parser", () => {
     expect(s.dueTime).toBe("17:00");
     expect(s.priority).toBe("urgent");
     expect(s.category).toBe("job");
+    expect(s.title).toBe("Apply for Werkstudent job at REWE");
+  });
+  it("strips priority markers but keeps meaningful words", () => {
+    expect(parseQuickAdd("Study DSP chapter 4 today urgent", "Europe/Berlin", now).title).toBe("Study DSP chapter 4");
+    const imp = parseQuickAdd("Read important email from the Ausländerbehörde", "Europe/Berlin", now);
+    expect(imp.title).toBe("Read important email from the Ausländerbehörde");
+    expect(imp.priority).toBe("high");
   });
   it("keeps undated tasks undated", () => {
     const r = parseQuickAdd("Buy a Deutschlandticket", "Europe/Berlin", now);

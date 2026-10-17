@@ -24,7 +24,7 @@ export async function createEvent(user: UserDoc, input: EventInput, source: "man
 
 export async function updateEvent(user: UserDoc, id: string, input: Partial<EventInput>) {
   if (!Types.ObjectId.isValid(id)) throw notFound("Event");
-  const ev = await CalendarEvent.findOneAndUpdate({ _id: id, userId: user._id }, input, { new: true, runValidators: true });
+  const ev = await CalendarEvent.findOneAndUpdate({ _id: id, userId: user._id }, input, { returnDocument: "after", runValidators: true });
   if (!ev) throw notFound("Event");
   return ev;
 }

@@ -22,7 +22,18 @@ export const devChatScript: ChatScript = (req) => {
   const blocks = lastUserBlocks(req);
   const results = blocks.filter((b) => b.type === "tool_result");
   if (results.length) {
-    const text = results.map((r) => (r.type === "tool_result" ? r.content.slice(0, 600) : "")).join("\n");
+    // Show each tool's own summary line; the raw JSON stays visible in the tool-activity panel.
+    const text = results
+      .map((r) => {
+        if (r.type !== "tool_result") return "";
+        try {
+          const parsed = JSON.parse(r.content) as { summary?: string; error?: string };
+          return `- ${parsed.summary ?? parsed.error ?? r.content.slice(0, 300)}`;
+        } catch {
+          return `- ${r.content.slice(0, 300)}`;
+        }
+      })
+      .join("\n");
     return { content: [{ type: "text", text: `${DEV_MOCK_LABEL}\nTool results:\n${text}` }], stopReason: "end_turn", model: "dev-mock" };
   }
   const text = blocks.flatMap((b) => (b.type === "text" ? [b.text] : [])).join(" ");
@@ -58,11 +69,13 @@ function placeholder(schema: Record<string, unknown>): unknown {
       return schema.format === "date" ? "2099-01-01" : `${DEV_MOCK_LABEL} placeholder`;
     case "number":
     case "integer":
-      return typeof schema.minimum === "number" ? schema.minimum : 0;
+      // Clamp to a small in-range value; Zod's int() emits safe-integer bounds that look like garbage in the UI.
+      return typeof schema.minimum === "number" && schema.minimum > -1000 ? Math.max(schema.minimum, 0) : 0;
     case "boolean":
       return false;
     case "array":
-      return typeof schema.minItems === "number" && schema.minItems > 0 ? [placeholder(schema.items as Record<string, unknown>)] : [];
+      // One labelled placeholder item so list UIs can be exercised in dev mode.
+      return schema.maxItems === 0 ? [] : [placeholder(schema.items as Record<string, unknown>)];
     case "object": {
       const props = (schema.properties ?? {}) as Record<string, Record<string, unknown>>;
       return Object.fromEntries(Object.entries(props).map(([k, v]) => [k, placeholder(v)]));
