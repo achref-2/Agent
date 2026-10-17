@@ -21,6 +21,7 @@ import { useAuth } from "../lib/auth";
 import { formatDateTime } from "../lib/dates";
 import { useTheme } from "../lib/theme";
 import type { Notification } from "../lib/types";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { useToast } from "./toast";
 import { cx, IconButton, Spinner } from "./ui";
 
@@ -210,7 +211,9 @@ export function Layout() {
         <main className="min-h-0 flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:py-7">
             <Suspense fallback={<div className="flex justify-center py-16"><Spinner label="Loading page" /></div>}>
-              <Outlet />
+              <ErrorBoundary key={location.pathname}>
+                <Outlet />
+              </ErrorBoundary>
             </Suspense>
           </div>
         </main>

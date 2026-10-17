@@ -218,7 +218,9 @@ function SecurityCard() {
   const [form, setForm] = useState({ currentPassword: "", newPassword: "" });
   const [error, setError] = useState<string | null>(null);
   const [confirmWipe, setConfirmWipe] = useState(false);
-  useEffect(() => setError(null), [form]);
+  useEffect(() => {
+    setError(null);
+  }, [form]);
   async function change(e: FormEvent) {
     e.preventDefault();
     try {

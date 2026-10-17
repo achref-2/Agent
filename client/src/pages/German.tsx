@@ -63,7 +63,9 @@ function TalkTab() {
   const [error, setError] = useState<string | null>(null);
   const [showTranslation, setShowTranslation] = useState<Set<number>>(new Set());
   const bottom = useRef<HTMLDivElement>(null);
-  useEffect(() => bottom.current?.scrollIntoView({ block: "end" }), [active?.messages.length, pending]);
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ block: "end" });
+  }, [active?.messages.length, pending]);
 
   async function start(scenario: string) {
     try {
