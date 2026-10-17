@@ -11,7 +11,7 @@ const AdminAnalysisSchema = z.object({
   sender: z.string().nullable(),
   documentType: z.string().describe("e.g. Rundfunkbeitrag letter, Krankenkasse notice, Mietvertrag, university email"),
   purpose: z.string(),
-  facts: z.array(z.object({ statement: z.string().describe("A fact stated in the document"), quote: z.string().describe("The shortest exact sentence or phrase from the document that supports this fact (one sentence, not a whole paragraph), copied verbatim in the original language"), page: z.number().int().nullable() })),
+  facts: z.array(z.object({ statement: z.string().describe("A substantive fact stated in the document (not the greeting, salutation or sign-off)"), quote: z.string().describe("The shortest exact sentence or phrase from the document that supports this fact (one sentence, not a whole paragraph), copied verbatim in the original language"), page: z.number().int().nullable() })),
   interpretations: z.array(z.object({ statement: z.string().describe("Your interpretation or advice, not stated in the document"), confidence: z.enum(["high", "medium", "low"]) })),
   deadlines: z.array(z.object({ date: z.string().nullable().describe("YYYY-MM-DD, null if relative or unclear"), description: z.string(), quote: z.string() })),
   actions: z.array(
@@ -19,7 +19,7 @@ const AdminAnalysisSchema = z.object({
   ),
   requiredDocuments: z.array(z.string()),
   uncertainties: z.array(z.string()).describe("Legal or administrative points that need confirmation from the sender, a lawyer or an advice centre"),
-  draftReplyGerman: z.string().nullable().describe("A German reply written BY the student TO the organisation that sent the document (address the sender, sign with the student's name), or null if no reply is needed"),
+  draftReplyGerman: z.string().nullable().describe("A German reply written BY the student TO the organisation in `sender`: name that organisation in the greeting (e.g. \"Sehr geehrte Damen und Herren der Techniker Krankenkasse,\"), sign with the student's real name, and never claim the student has already done something the document asks for. Null if no reply is needed"),
   draftReplyEnglish: z.string().nullable().describe("English translation of the reply"),
 });
 
@@ -34,7 +34,7 @@ export async function analyzeAdminDocument(user: UserDoc, documentId: string) {
   const analysis = await getProvider().generateObject({
     system: `You explain German official letters, emails, insurance, rental and university documents to an international student in Köln (today is ${todayInTz(user.timezone)}). Separate what the document actually says (facts, with exact quotes) from your interpretations. Never present legal conclusions as certain; list them as uncertainties. Never invent dates, amounts or reference numbers. ${UNTRUSTED_RULE}`,
     schema: AdminAnalysisSchema,
-    prompt: `Analyse this document titled "${doc.title}". The student who received it is ${user.name}; any reply is written by ${user.name} and addressed to the organisation or person who sent the document.\n\n${wrapUntrusted(fullText)}`,
+    prompt: `Analyse this document titled "${doc.title}". The student who received it is ${user.name}; any reply is written by ${user.name} (sign with this name, not a placeholder) and addressed to the organisation or person who sent the document. Only use placeholders like [Versichertennummer] for details that are not in the document.\n\n${wrapUntrusted(fullText)}`,
   });
   // Mark which quotes really occur in the document, so the UI can flag unverifiable ones.
   const facts = analysis.facts.map((f) => ({ ...f, verified: quoteFound(f.quote, fullText) }));
