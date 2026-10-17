@@ -52,6 +52,17 @@ For a local database instead: `MONGODB_URI=mongodb://localhost:27017/ghostmate` 
 
 `ANTHROPIC_FALLBACKS=default` turns on Anthropic's server-side refusal fallback: if the model declines a request for policy reasons, the API retries it on a fallback model inside the same call. Set it to `off` to disable.
 
+### Free local AI with Ollama (no API costs)
+
+Claude Pro does not include API credits, so GhostMate cannot use a Pro subscription. To get real AI answers for free, run a local model with [Ollama](https://ollama.com):
+
+1. Install Ollama for your OS and start it.
+2. `ollama pull qwen2.5:7b` (about 4.7 GB; needs ~8 GB free RAM. `qwen2.5:3b` is lighter but weaker).
+3. In `.env`: `AI_PROVIDER=ollama`, `OLLAMA_MODEL=qwen2.5:7b` (and `OLLAMA_BASE_URL` if Ollama is not on `http://127.0.0.1:11434`).
+4. Restart `npm run dev`. The sidebar shows the model with "(local)".
+
+The model must support tool calling (qwen2.5, qwen3, llama3.1). Local models are slower and less reliable than Claude: structured results are validated and retried once, and you get a clear error instead of bad data if the model still gets the format wrong.
+
 ### Without an API key
 
 - `AI_PROVIDER=none` (or an empty key): every non-AI feature works (tasks, calendar, reminders, quick add, applications, document upload and text extraction, memory). AI buttons are disabled and AI endpoints return a clear "AI is not configured" error.
@@ -184,7 +195,7 @@ Reminders are checked by the server every 30 seconds. On free tiers that put the
 
 ## Tests actually run
 
-Server (`npm test -w server`, 39 tests) covers: registration, login, logout, closed registration, CSRF header, invalid sessions; task CRUD, search, urgency ranking, overdue filter, validation, cross-user isolation, quick add, bulk create, weekly events; the agent loop with a scripted model (tool calls change real records, invalid input and unknown tools return errors, another user's records are unreachable, delete needs confirmation and cannot be confirmed twice or by someone else, the iteration limit stops loops, memory on/off, clear 503 when AI is not configured); PDF upload and per-page extraction, scanned-PDF detection, rejection of disguised files, grounded answers with verified and unverified citations, "not in your documents" without an AI call, document privacy and deletion, admin-letter analysis with quote verification and linked task creation (including a prompt-injection line in the letter); German corrections and mistake counting; application tracking and fit analysis requiring a real profile; dev-mock labelling; reminders firing exactly once, skipping completed tasks and re-arming after rescheduling; dashboard numbers from real records; memory edit/delete and settings validation; date, timezone, parser and retrieval helpers.
+Server (`npm test -w server`, 43 tests, including the Ollama provider against a fake Ollama server) covers: registration, login, logout, closed registration, CSRF header, invalid sessions; task CRUD, search, urgency ranking, overdue filter, validation, cross-user isolation, quick add, bulk create, weekly events; the agent loop with a scripted model (tool calls change real records, invalid input and unknown tools return errors, another user's records are unreachable, delete needs confirmation and cannot be confirmed twice or by someone else, the iteration limit stops loops, memory on/off, clear 503 when AI is not configured); PDF upload and per-page extraction, scanned-PDF detection, rejection of disguised files, grounded answers with verified and unverified citations, "not in your documents" without an AI call, document privacy and deletion, admin-letter analysis with quote verification and linked task creation (including a prompt-injection line in the letter); German corrections and mistake counting; application tracking and fit analysis requiring a real profile; dev-mock labelling; reminders firing exactly once, skipping completed tasks and re-arming after rescheduling; dashboard numbers from real records; memory edit/delete and settings validation; date, timezone, parser and retrieval helpers.
 
 Client (`npm test -w client`, 4 tests): date helpers and the task row component.
 
