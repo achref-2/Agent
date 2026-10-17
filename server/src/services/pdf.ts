@@ -4,7 +4,8 @@ import { getDocument, VerbosityLevel } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 const require = createRequire(import.meta.url);
 const pdfjsRoot = path.dirname(require.resolve("pdfjs-dist/package.json"));
-const standardFontDataUrl = path.join(pdfjsRoot, "standard_fonts") + path.sep;
+// pdf.js requires a "/"-terminated path, also on Windows where path.join uses "\".
+const standardFontDataUrl = path.join(pdfjsRoot, "standard_fonts").replaceAll("\\", "/") + "/";
 
 export interface ExtractedPdf {
   pages: string[]; // index 0 = page 1
