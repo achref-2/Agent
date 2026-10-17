@@ -11,7 +11,7 @@ export async function processDueReminders(now = new Date()) {
     const task = await Task.findOneAndUpdate(
       { reminderAt: { $ne: null, $lte: now }, reminderSentAt: null, status: { $in: ["todo", "in_progress"] } },
       { $set: { reminderSentAt: now } },
-      { new: true },
+      { returnDocument: "after" },
     );
     if (!task) break;
     try {

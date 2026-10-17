@@ -65,6 +65,6 @@ export async function generateBriefing(user: UserDoc) {
     prompt: data,
     maxTokens: 4000,
   });
-  const b = await Briefing.findOneAndUpdate({ userId: user._id, date: d.today }, { content, model: provider.model }, { upsert: true, new: true });
+  const b = await Briefing.findOneAndUpdate({ userId: user._id, date: d.today }, { content, model: provider.model }, { upsert: true, returnDocument: "after" });
   return { content: b.content, generatedAt: b.updatedAt };
 }

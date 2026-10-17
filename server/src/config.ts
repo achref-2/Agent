@@ -33,6 +33,10 @@ function load(): Config {
     const issues = parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`).join("\n");
     throw new Error(`Invalid environment configuration:\n${issues}\nSee .env.example.`);
   }
+  if (parsed.data.NODE_ENV === "production" && parsed.data.AI_PROVIDER === "mock") {
+    // Mock answers must never be served as if they were real; they are for local development only.
+    throw new Error("AI_PROVIDER=mock is not allowed with NODE_ENV=production. Use AI_PROVIDER=anthropic or AI_PROVIDER=none.");
+  }
   return parsed.data;
 }
 

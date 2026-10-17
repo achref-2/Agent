@@ -32,7 +32,7 @@ notificationsRouter.post("/read-all", async (req, res) => {
   res.json({ ok: true });
 });
 notificationsRouter.post("/:id/read", async (req, res) => {
-  const n = await Notification.findOneAndUpdate({ _id: parse(objectId, req.params.id), userId: currentUser(req)._id }, { readAt: new Date() }, { new: true });
+  const n = await Notification.findOneAndUpdate({ _id: parse(objectId, req.params.id), userId: currentUser(req)._id }, { readAt: new Date() }, { returnDocument: "after" });
   if (!n) throw notFound("Notification");
   res.json({ notification: n });
 });
@@ -46,7 +46,7 @@ memoryRouter.post("/", async (req, res) => {
   res.status(201).json({ memory: await Memory.create({ ...parse(MemoryInput, req.body), userId: currentUser(req)._id, source: "user" }) });
 });
 memoryRouter.patch("/:id", async (req, res) => {
-  const m = await Memory.findOneAndUpdate({ _id: parse(objectId, req.params.id), userId: currentUser(req)._id }, parse(MemoryInput.partial(), req.body), { new: true, runValidators: true });
+  const m = await Memory.findOneAndUpdate({ _id: parse(objectId, req.params.id), userId: currentUser(req)._id }, parse(MemoryInput.partial(), req.body), { returnDocument: "after", runValidators: true });
   if (!m) throw notFound("Memory");
   res.json({ memory: m });
 });
@@ -87,7 +87,7 @@ settingsRouter.patch("/", async (req, res) => {
     if (k === "profile" || k === "german") for (const [k2, v2] of Object.entries(v as object)) set[`${k}.${k2}`] = v2;
     else set[k] = v;
   }
-  const user = await User.findByIdAndUpdate(currentUser(req)._id, { $set: set }, { new: true, runValidators: true });
+  const user = await User.findByIdAndUpdate(currentUser(req)._id, { $set: set }, { returnDocument: "after", runValidators: true });
   res.json({ user });
 });
 

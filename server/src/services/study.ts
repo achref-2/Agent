@@ -177,7 +177,7 @@ export async function recordTopicResult(user: UserDoc, input: { topic: string; c
   const t = await StudyTopic.findOneAndUpdate(
     { userId: user._id, name: input.topic.slice(0, 160) },
     { $inc: { attempts: 1, correct: input.correct ? 1 : 0 }, $setOnInsert: { course: input.course ?? "" } },
-    { upsert: true, new: true },
+    { upsert: true, returnDocument: "after" },
   );
   t.struggling = t.attempts >= 2 && t.correct / t.attempts < 0.6;
   await t.save();
