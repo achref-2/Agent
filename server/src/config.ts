@@ -12,13 +12,17 @@ const EnvSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
-  // "anthropic" (default), "mock" (clearly labelled development mode) or "none".
-  AI_PROVIDER: z.enum(["anthropic", "mock", "none"]).default("anthropic"),
+  // "anthropic" (default), "ollama" (free local model), "mock" (clearly labelled development mode) or "none".
+  AI_PROVIDER: z.enum(["anthropic", "ollama", "mock", "none"]).default("anthropic"),
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default("claude-opus-5-5"),
   ANTHROPIC_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).default("medium"),
   // "default" enables Anthropic's server-side refusal fallback; "off" disables it.
   ANTHROPIC_FALLBACKS: z.enum(["default", "off"]).default("default"),
+  OLLAMA_BASE_URL: z.url().default("http://127.0.0.1:11434"),
+  OLLAMA_MODEL: z.string().default("qwen2.5:7b"),
+  // Context window in tokens. Larger values need more RAM.
+  OLLAMA_NUM_CTX: z.coerce.number().int().min(2048).max(131072).default(8192),
   AGENT_MAX_ITERATIONS: z.coerce.number().int().min(1).max(20).default(6),
   AGENT_MAX_TOOL_CALLS: z.coerce.number().int().min(1).max(50).default(12),
   MAX_UPLOAD_MB: z.coerce.number().positive().max(50).default(20),
@@ -46,5 +50,6 @@ export function aiStatus(): { provider: Config["AI_PROVIDER"]; configured: boole
   if (config.AI_PROVIDER === "mock") return { provider: "mock", configured: true, model: "dev-mock", devMock: true };
   if (config.AI_PROVIDER === "anthropic" && config.ANTHROPIC_API_KEY)
     return { provider: "anthropic", configured: true, model: config.ANTHROPIC_MODEL, devMock: false };
+  if (config.AI_PROVIDER === "ollama") return { provider: "ollama", configured: true, model: `${config.OLLAMA_MODEL} (local)`, devMock: false };
   return { provider: config.AI_PROVIDER, configured: false, model: null, devMock: false };
 }
